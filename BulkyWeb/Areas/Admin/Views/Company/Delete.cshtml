@@ -1,0 +1,55 @@
+﻿@model Company
+
+<div class="card shadow border-0 my-5">
+<div class="card-header bg-secondary bg-gradient m-lg-0 py-3">
+	<div class="row">
+		<div class="col-12 text-center">
+			<h2 class="text-white py-2">Delete Company</h2>
+		</div>
+	</div>
+</div>
+	<div class="card-body p-4">
+		<form method="post" enctype="multipart/form-data">
+	<input asp-for="Id" hidden />
+	<div class="row">
+		<div class="col p-3">
+				<div asp-validation-summary="All"></div>
+					<div class="mb-3 row p-1">
+						<label asp-for="Name" class="p-0"></label>
+						<input asp-for="Name" disabled class="form-control" />
+					</div>
+					<div class="mb-3 row p-1">
+						<label asp-for="PhoneNumber" class="p-0"></label>
+						<input asp-for="PhoneNumber" disabled class="form-control" />
+					</div>
+					<div class="mb-3 row p-1">
+						<label asp-for="StreetAddress" class="p-0"></label>
+						<input asp-for="StreetAddress" disabled class="form-control" />
+					</div>
+					<div class="mb-3 row p-1">
+						<label asp-for="City" class="p-0"></label>
+						<input asp-for="City" disabled class="form-control" />
+					</div>
+					<div class="mb-3 row p-1">
+						<label asp-for="State" class="p-0"></label>
+						<input asp-for="State" disabled class="form-control" />
+					</div>
+					<div class="mb-3 row p-1">
+						<label asp-for="PostalCode" class="p-0"></label>
+						<input asp-for="PostalCode" disabled class="form-control" />
+					</div>
+		<div class="row">
+			<div class="col-6 col-md-3">
+				<button type="submit" class="btn btn-danger form-control">Delete</button>
+			</div>
+			<div class="col-6 col-md-3">
+				<a asp-controller="Company" asp-action="Index" class="btn btn-outline-secondary border form-control">
+					Back to Companies
+				</a>
+			</div>
+		</div>
+		</div>
+	</div>
+</form>
+</div>
+</div>
