@@ -8,10 +8,10 @@ function loadDataTable() {
     dataTable = $('#tblData').DataTable({
         "ajax": { url:'/admin/company/getall'},
         "columns": [
-            { data: 'name', "width": "30%" },
-            { data: 'phoneNumber', "width": "20%" },
-            { data: 'streetAddress', "width": "10%" },
-            { data: 'city', "width": "5%" },
+            { data: 'name', "width": "15%" },
+            { data: 'phoneNumber', "width": "15%" },
+            { data: 'streetAddress', "width": "20%" },
+            { data: 'city', "width": "10%" },
             { data: 'state', "width": "10%" },
             {
                 data: 'id',
@@ -21,7 +21,7 @@ function loadDataTable() {
                                 <a href="/admin/company/delete/${data}" class="btn btn-danger mx-2"> <i class="fa-regular fa-square-minus" style="color: #ffffff;"></i> Delete</a> 
                             </div>`
                 },
-                "width": "25%"
+                "width": "30%"
             }
         ]
     });
