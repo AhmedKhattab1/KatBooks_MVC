@@ -16,9 +16,9 @@ function loadDataTable() {
             {
                 data: 'id',
                 "render": function (data) {
-                    return `<div class="w-75 btn-group" role="group">
+                    return `<div class="w-0 btn btn-group" style="display: flex; justify-content: center;" role="group">
                                 <a href="/admin/company/upsert?id=${data}" class="btn btn-primary mx-2"> <i class="fa-regular fa-pen-to-square" style="color: #ffffff;"></i> Edit</a>
-                                <a href="/admin/company/delete/${data}" class="btn btn-danger mx-2"> <i class="fa-regular fa-square-minus" style="color: #ffffff;"></i> Delete</a> 
+                                <a href="/admin/company/delete/${data}" class="btn btn-danger mx-2"> <i class="fa-regular fa-trash-can" style="color: #ffffff;"></i> Delete</a> 
                             </div>`
                 },
                 "width": "30%"

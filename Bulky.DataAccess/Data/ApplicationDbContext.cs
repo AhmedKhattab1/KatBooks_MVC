@@ -19,8 +19,9 @@ namespace Bulky.DataAccess.Data
         public DbSet<ShoppingCart> ShoppingCarts { get; set; }
         public DbSet<OrderHeader> OrderHeaders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
+		public DbSet<ProductImage> ProductImages { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 			base.OnModelCreating(modelBuilder);
 
@@ -49,8 +50,7 @@ namespace Bulky.DataAccess.Data
 					Price = 47,
 					Price50 = 43,
 					Price100 = 39,
-					CategoryId = 2,
-					ImageUrl=""
+					CategoryId = 2
 				},
 				new Product
 				{
@@ -63,8 +63,7 @@ namespace Bulky.DataAccess.Data
 					Price = 51,
 					Price50 = 47,
 					Price100 = 42,
-					CategoryId = 2,
-					ImageUrl = ""
+					CategoryId = 2
 				},
 				new Product
 				{
@@ -77,8 +76,7 @@ namespace Bulky.DataAccess.Data
 					Price = 50,
 					Price50 = 45,
 					Price100 = 40,
-					CategoryId = 2,
-					ImageUrl = ""
+					CategoryId = 2
 				},
 				new Product
 				{
@@ -91,8 +89,7 @@ namespace Bulky.DataAccess.Data
 					Price = 28,
 					Price50 = 25,
 					Price100 = 21,
-					CategoryId = 4,
-					ImageUrl = ""
+					CategoryId = 4
 				},
 				new Product
 				{
@@ -105,8 +102,7 @@ namespace Bulky.DataAccess.Data
 					Price = 25,
 					Price50 = 23,
 					Price100 = 20,
-					CategoryId = 4,
-					ImageUrl = ""
+					CategoryId = 4
 				},
 				new Product
 				{
@@ -119,8 +115,7 @@ namespace Bulky.DataAccess.Data
 					Price = 37,
 					Price50 = 35,
 					Price100 = 30,
-					CategoryId = 1,
-					ImageUrl = ""
+					CategoryId = 1
 				}
 				);
 		}

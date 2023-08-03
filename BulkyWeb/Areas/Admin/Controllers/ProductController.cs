@@ -16,12 +16,17 @@ namespace BulkyWeb.Areas.Admin.Controllers
     {
         private readonly IProductRepository _productRepo;
         private readonly ICategoryRepository _categoryRepo;
+        private readonly IProductImageRepository _productImageRepo;
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProductController(IProductRepository productRepo, ICategoryRepository categoryRepo, IWebHostEnvironment webHostEnvironment)
+        public ProductController(IProductRepository productRepo, 
+            ICategoryRepository categoryRepo, 
+            IProductImageRepository productImageRepo, 
+            IWebHostEnvironment webHostEnvironment)
         {
             _productRepo = productRepo;
             _categoryRepo = categoryRepo;
+            _productImageRepo = productImageRepo;
             _webHostEnvironment = webHostEnvironment;
         }
         public IActionResult Index()
@@ -49,41 +54,16 @@ namespace BulkyWeb.Areas.Admin.Controllers
             else
             {
                 //update
-                productVM.Product = _productRepo.Get(u => u.Id == id);
+                productVM.Product = _productRepo.Get(u => u.Id == id, includeProperties:"ProductImages");
                 return View(productVM);
             }
 
         }
         [HttpPost]
-        public IActionResult Upsert(ProductVM productVM, IFormFile? file)
+        public IActionResult Upsert(ProductVM productVM, List<IFormFile> files)
         {
             if (ModelState.IsValid)
             {
-                string wwwRootPath = _webHostEnvironment.WebRootPath;
-                if (file != null)
-                {
-                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                    string productPath = Path.Combine(wwwRootPath, @"images\product");
-
-                    if (!string.IsNullOrEmpty(productVM.Product.ImageUrl))
-                    {
-                        //delete old image
-                        var oldImagePath = Path.Combine(wwwRootPath, productVM.Product.ImageUrl.TrimStart('\\'));
-
-                        if (System.IO.File.Exists(oldImagePath))
-                        {
-                            System.IO.File.Delete(oldImagePath);
-                        }
-                    }
-
-                    using (var fileStream = new FileStream(Path.Combine(productPath, fileName), FileMode.Create))
-                    {
-                        file.CopyTo(fileStream);
-                    }
-
-                    productVM.Product.ImageUrl = @"\images\product\" + fileName;
-                }
-
                 if (productVM.Product.Id == 0)
                 {
                     _productRepo.Add(productVM.Product);
@@ -94,7 +74,46 @@ namespace BulkyWeb.Areas.Admin.Controllers
                 }
 
                 _productRepo.Save();
-                TempData["success"] = "Product created successfully";
+
+                string wwwRootPath = _webHostEnvironment.WebRootPath;
+                if (files != null)
+                {
+                    foreach(IFormFile file in files)
+                    {
+                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                        string productPath = @"images\products\product-" + productVM.Product.Id;
+                        string finaltPath = Path.Combine(wwwRootPath, productPath);
+
+                        if(!Directory.Exists(finaltPath))
+                        {
+                            Directory.CreateDirectory(finaltPath);
+                        }
+
+                        using (var fileStream = new FileStream(Path.Combine(finaltPath, fileName), FileMode.Create))
+                        {
+                            file.CopyTo(fileStream);
+                        }
+
+                        ProductImage productImage = new()
+                        {
+                            ImageUrl= @"\" + productPath + @"\"+ fileName,
+                            ProductId= productVM.Product.Id,
+                        };
+
+                        if(productVM.Product.ProductImages == null)
+                        {
+                            productVM.Product.ProductImages= new List<ProductImage>();
+                        }
+
+                        productVM.Product.ProductImages.Add(productImage);
+                    }
+
+                    _productRepo.Update(productVM.Product);
+                    _productRepo.Save();
+                }
+
+                
+                TempData["success"] = "Product created/updated successfully";
                 return RedirectToAction("Index", "Product");
             }
             else
@@ -130,10 +149,47 @@ namespace BulkyWeb.Areas.Admin.Controllers
             {
                 return NotFound();
             }
-            _productRepo.Remove(obj);
+
+			string productPath = @"images\products\product-" + id;
+			string finaltPath = Path.Combine(_webHostEnvironment.WebRootPath, productPath);
+
+			if (Directory.Exists(finaltPath))
+			{
+                string[] filePaths = Directory.GetFiles(finaltPath);
+                foreach (string filePath in filePaths)
+                {
+                    System.IO.File.Delete(filePath);
+                }
+				Directory.Delete(finaltPath);
+			}
+
+			_productRepo.Remove(obj);
             _productRepo.Save();
             TempData["success"] = "Product deleted successfully";
             return RedirectToAction("Index");
+        }
+
+        public IActionResult DeleteImage(int imageId)
+        {
+            var imageToBeDeleted = _productImageRepo.Get(u => u.Id == imageId);
+            int productId = imageToBeDeleted.ProductId;
+            if(imageToBeDeleted != null)
+            {
+                if(!string.IsNullOrEmpty(imageToBeDeleted.ImageUrl))
+                {
+                    var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, imageToBeDeleted.ImageUrl.TrimStart('\\'));
+
+                    if(System.IO.File.Exists(oldImagePath))
+                    {
+						System.IO.File.Delete(oldImagePath);
+
+					}
+                }
+                _productImageRepo.Remove(imageToBeDeleted);
+                _productImageRepo.Save();
+                TempData["success"] = "Deleted successfully";
+            }
+            return RedirectToAction(nameof(Upsert), new {id = productId});
         }
 
         #region APICALLS

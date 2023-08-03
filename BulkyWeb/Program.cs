@@ -50,6 +50,7 @@ builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserRepository
 builder.Services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();
 builder.Services.AddScoped<IOrderHeaderRepository, OrderHeaderRepository>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+builder.Services.AddScoped<IProductImageRepository, ProductImageRepository>();
 
 
 var app = builder.Build();
