@@ -22,13 +22,13 @@ function loadDataTable() {
                     if (lockout > today) {
                         return `<div class="text-center">
                                 <a onclick=LockUnlock('${data.id}') class="btn btn-success text-white" style="cursor:pointer; width:100px;"> <i class="fa-solid fa-unlock"></i> Unlock</a>
-                                <a class="btn btn-outline-dark" style="cursor:pointer; width:150px;"> <i class="fa-solid fa-pen-to-square"></i> Permission</a>
+                                <a href="/Admin/user/RoleManagment?userId=${data.id}" class="btn btn-outline-dark" style="cursor:pointer; width:150px;"> <i class="fa-solid fa-pen-to-square"></i> Permission</a>
                             </div>`
                     }
                     else {
                         return `<div class="text-center">
                                 <a onclick=LockUnlock('${data.id}') class="btn btn-danger text-white" style="cursor:pointer; width:100px;"> <i class="fa-solid fa-lock"></i> Lock</a>
-                                <a class="btn btn-outline-dark" style="cursor:pointer; width:150px;"> <i class="fa-solid fa-pen-to-square"></i> Permission</a>
+                                <a href="/Admin/user/RoleManagment?userId=${data.id}" class="btn btn-outline-dark" style="cursor:pointer; width:150px;"> <i class="fa-solid fa-pen-to-square"></i> Permission</a>
                             </div>`
                     }
                 },

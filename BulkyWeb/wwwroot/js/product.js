@@ -12,7 +12,7 @@ function loadDataTable() {
             { data: 'author', "width": "20%" },
             { data: 'isbn', "width": "10%" },
             { data: 'listPrice', "width": "5%" },
-            { data: 'category.name', "width": "10%" },
+            { data: 'category.name', "width": "15%" },
             {
                 data: 'id',
                 "render": function (data) {
@@ -21,7 +21,7 @@ function loadDataTable() {
                                 <a href="/admin/product/delete/${data}" class="btn btn-danger mx-2"> <i class="fa-regular fa-square-minus" style="color: #ffffff;"></i> Delete</a> 
                             </div>`
                 },
-                "width": "25%"
+                "width": "20%"
             }
         ]
     });

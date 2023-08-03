@@ -4,6 +4,7 @@ using Bulky.Models;
 using Bulky.Models.ViewModels;
 using Bulky.Utility;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -16,20 +17,70 @@ namespace BulkyWeb.Areas.Admin.Controllers
     [Authorize(Roles = SD.Role_Admin)]
     public class UserController : Controller
     {
-        private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public UserController(ApplicationDbContext context)
+        public UserController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
         public IActionResult Index()
         {
             return View();
         }
 
-        #region APICALLS
+        public IActionResult RoleManagment(string userId)
+        {
+            string roleId = _context.UserRoles.FirstOrDefault(u => u.UserId== userId).RoleId;
+            RoleManagmentVM RoleVM = new RoleManagmentVM()
+            {
+                ApplicationUser = _context.ApplicationUsers.Include(u => u.Company).FirstOrDefault(u => u.Id == userId),
+                RoleList = _context.Roles.Select(i => new SelectListItem
+                {
+                    Text = i.Name,
+                    Value = i.Name,
+                }),
+                CompanyList = _context.Companies.Select(i => new SelectListItem
+                {
+                    Text = i.Name,
+                    Value = i.Id.ToString(),
+                }),
+            };
 
+            RoleVM.ApplicationUser.Role = _context.Roles.FirstOrDefault(u => u.Id == roleId).Name;
+
+            return View(RoleVM);
+        }
+
+        [HttpPost]
+        public IActionResult RoleManagment(RoleManagmentVM roleManagmentVM)
+        {
+            string roleId = _context.UserRoles.FirstOrDefault(u => u.UserId == roleManagmentVM.ApplicationUser.Id).RoleId;
+            string oldRole = _context.Roles.FirstOrDefault(u => u.Id == roleId).Name;
+
+            if(!(roleManagmentVM.ApplicationUser.Role == oldRole))
+            {
+                ApplicationUser applicationUser = _context.ApplicationUsers.FirstOrDefault(u => u.Id == roleManagmentVM.ApplicationUser.Id);
+                if(roleManagmentVM.ApplicationUser.Role == SD.Role_Company)
+                {
+                    applicationUser.CompanyId = roleManagmentVM.ApplicationUser.CompanyId;
+                }
+                if(oldRole == SD.Role_Company)
+                {
+                    applicationUser.CompanyId = null;
+                }
+
+                _context.SaveChanges();
+                _userManager.RemoveFromRoleAsync(applicationUser, oldRole).GetAwaiter().GetResult();
+                _userManager.AddToRoleAsync(applicationUser, roleManagmentVM.ApplicationUser.Role).GetAwaiter().GetResult();
+            }
+
+            TempData["success"] = "Role Updated successfully";
+            return RedirectToAction("Index");
+        }
+
+        #region APICALLS
         [HttpGet]
         public IActionResult GetAll()
         {
