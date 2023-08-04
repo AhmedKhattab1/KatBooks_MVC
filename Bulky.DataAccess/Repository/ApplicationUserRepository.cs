@@ -22,5 +22,10 @@ namespace Bulky.DataAccess.Repository
 		{
 			_context.SaveChanges();
 		}
-	}
+
+        public void Update(ApplicationUser applicationUser)
+        {
+            _context.ApplicationUsers.Update(applicationUser);
+        }
+    }
 }
