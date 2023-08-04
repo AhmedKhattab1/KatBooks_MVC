@@ -19,6 +19,7 @@ namespace BulkyWeb.Areas.Customer.Controllers
         private readonly IApplicationUserRepository _applicationUserRepo;
 		private readonly IOrderHeaderRepository _orderHeaderRepo;
 		private readonly IOrderDetailRepository _orderDetailRepo;
+		private readonly IProductImageRepository _productImageRepo;
 
 		[BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
@@ -26,12 +27,14 @@ namespace BulkyWeb.Areas.Customer.Controllers
         public CartController(IShoppingCartRepository shoppingCartRepo,
             IApplicationUserRepository applicationUserRepo,
             IOrderHeaderRepository orderHeaderRepo,
-            IOrderDetailRepository orderDetailRepo)
+            IOrderDetailRepository orderDetailRepo,
+            IProductImageRepository productImageRepo)
         {
             _shoppingCartRepo = shoppingCartRepo;
             _applicationUserRepo = applicationUserRepo;
 			_orderHeaderRepo = orderHeaderRepo;
 			_orderDetailRepo = orderDetailRepo;
+			_productImageRepo = productImageRepo;
 		}
         public IActionResult Index()
         {
@@ -44,8 +47,11 @@ namespace BulkyWeb.Areas.Customer.Controllers
                 OrderHeader = new()
             };
 
+            IEnumerable<ProductImage> productImages = _productImageRepo.GetAll();
+
             foreach(var cart in ShoppingCartVM.shoppingCartList)
             {
+                cart.Product.ProductImages = productImages.Where(u => u.ProductId == cart.Product.Id).ToList();
                 cart.Price = GetPriceBasedOnQuantity(cart);
                 ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
             }
