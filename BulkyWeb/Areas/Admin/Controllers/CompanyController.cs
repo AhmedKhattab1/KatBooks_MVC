@@ -14,18 +14,15 @@ namespace BulkyWeb.Areas.Admin.Controllers
     [Authorize(Roles = SD.Role_Admin)]
     public class CompanyController : Controller
     {
-        private readonly ICompanyRepository _companyRepo;
-        private readonly ICategoryRepository _categoryRepo;
-        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public CompanyController(ICompanyRepository companyRepo, ICategoryRepository categoryRepo)
+        public CompanyController(IUnitOfWork unitOfWork)
         {
-            _companyRepo = companyRepo;
-            _categoryRepo = categoryRepo;
+            _unitOfWork = unitOfWork;
         }
         public IActionResult Index()
         {
-            List<Company> objCompanyList = _companyRepo.GetAll().ToList();
+            List<Company> objCompanyList = _unitOfWork.Company.GetAll().ToList();
             return View(objCompanyList);
         }
 
@@ -39,7 +36,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
             else
             {
                 //update
-                Company companyObj = _companyRepo.Get(u => u.Id == id);
+                Company companyObj = _unitOfWork.Company.Get(u => u.Id == id);
                 return View(companyObj);
             }
 
@@ -51,14 +48,14 @@ namespace BulkyWeb.Areas.Admin.Controllers
             {
                 if (CompanyObj.Id == 0)
                 {
-                    _companyRepo.Add(CompanyObj);
+                    _unitOfWork.Company.Add(CompanyObj);
                 }
                 else
                 {
-                    _companyRepo.Update(CompanyObj);
+                    _unitOfWork.Company.Update(CompanyObj);
                 }
 
-                _companyRepo.Save();
+                _unitOfWork.Save();
                 TempData["success"] = "Company created successfully";
                 return RedirectToAction("Index", "Company");
             }
@@ -75,7 +72,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
             {
                 return NotFound();
             }
-            Company? companyFromDb = _companyRepo.Get(u => u.Id == id);
+            Company? companyFromDb = _unitOfWork.Company.Get(u => u.Id == id);
 
             if (companyFromDb == null)
             {
@@ -86,13 +83,13 @@ namespace BulkyWeb.Areas.Admin.Controllers
         [HttpPost, ActionName("Delete")]
         public IActionResult DeletePOST(int? id)
         {
-            Company? obj = _companyRepo.Get(u => u.Id == id);
+            Company? obj = _unitOfWork.Company.Get(u => u.Id == id);
             if (obj == null)
             {
                 return NotFound();
             }
-            _companyRepo.Remove(obj);
-            _companyRepo.Save();
+            _unitOfWork.Company.Remove(obj);
+            _unitOfWork.Save();
             TempData["success"] = "Company deleted successfully";
             return RedirectToAction("Index");
         }
@@ -102,7 +99,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            List<Company> objCompanyList = _companyRepo.GetAll().ToList();
+            List<Company> objCompanyList = _unitOfWork.Company.GetAll().ToList();
             return Json(new { data = objCompanyList });
         }
         #endregion

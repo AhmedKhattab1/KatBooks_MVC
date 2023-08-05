@@ -14,24 +14,18 @@ namespace BulkyWeb.Areas.Admin.Controllers
     [Authorize(Roles = SD.Role_Admin)]
     public class ProductController : Controller
     {
-        private readonly IProductRepository _productRepo;
-        private readonly ICategoryRepository _categoryRepo;
-        private readonly IProductImageRepository _productImageRepo;
+        private readonly IUnitOfWork _unitOfWork;
+
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProductController(IProductRepository productRepo, 
-            ICategoryRepository categoryRepo, 
-            IProductImageRepository productImageRepo, 
-            IWebHostEnvironment webHostEnvironment)
+        public ProductController(IUnitOfWork unitOfWork, IWebHostEnvironment webHostEnvironment)
         {
-            _productRepo = productRepo;
-            _categoryRepo = categoryRepo;
-            _productImageRepo = productImageRepo;
+            _unitOfWork = unitOfWork;
             _webHostEnvironment = webHostEnvironment;
         }
         public IActionResult Index()
         {
-            List<Product> objProductList = _productRepo.GetAll(includeProperties: "Category").ToList();
+            List<Product> objProductList = _unitOfWork.Product.GetAll(includeProperties: "Category").ToList();
             return View(objProductList);
         }
 
@@ -39,7 +33,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
         {
             ProductVM productVM = new()
             {
-                CategoryList = _categoryRepo.GetAll().Select(u => new SelectListItem
+                CategoryList = _unitOfWork.Category.GetAll().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
@@ -54,7 +48,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
             else
             {
                 //update
-                productVM.Product = _productRepo.Get(u => u.Id == id, includeProperties:"ProductImages");
+                productVM.Product = _unitOfWork.Product.Get(u => u.Id == id, includeProperties:"ProductImages");
                 return View(productVM);
             }
 
@@ -66,14 +60,14 @@ namespace BulkyWeb.Areas.Admin.Controllers
             {
                 if (productVM.Product.Id == 0)
                 {
-                    _productRepo.Add(productVM.Product);
+                    _unitOfWork.Product.Add(productVM.Product);
                 }
                 else
                 {
-                    _productRepo.Update(productVM.Product);
+                    _unitOfWork.Product.Update(productVM.Product);
                 }
 
-                _productRepo.Save();
+                _unitOfWork.Save();
 
                 string wwwRootPath = _webHostEnvironment.WebRootPath;
                 if (files != null)
@@ -108,8 +102,8 @@ namespace BulkyWeb.Areas.Admin.Controllers
                         productVM.Product.ProductImages.Add(productImage);
                     }
 
-                    _productRepo.Update(productVM.Product);
-                    _productRepo.Save();
+                    _unitOfWork.Product.Update(productVM.Product);
+                    _unitOfWork.Save();
                 }
 
                 
@@ -118,7 +112,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
             }
             else
             {
-                productVM.CategoryList = _categoryRepo.GetAll().Select(u => new SelectListItem
+                productVM.CategoryList = _unitOfWork.Category.GetAll().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
@@ -133,7 +127,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
             {
                 return NotFound();
             }
-            Product? productFromDb = _productRepo.Get(u => u.Id == id);
+            Product? productFromDb = _unitOfWork.Product.Get(u => u.Id == id);
 
             if (productFromDb == null)
             {
@@ -144,7 +138,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
         [HttpPost, ActionName("Delete")]
         public IActionResult DeletePOST(int? id)
         {
-            Product? obj = _productRepo.Get(u => u.Id == id);
+            Product? obj = _unitOfWork.Product.Get(u => u.Id == id);
             if (obj == null)
             {
                 return NotFound();
@@ -163,15 +157,15 @@ namespace BulkyWeb.Areas.Admin.Controllers
 				Directory.Delete(finaltPath);
 			}
 
-			_productRepo.Remove(obj);
-            _productRepo.Save();
+			_unitOfWork.Product.Remove(obj);
+            _unitOfWork.Save();
             TempData["success"] = "Product deleted successfully";
             return RedirectToAction("Index");
         }
 
         public IActionResult DeleteImage(int imageId)
         {
-            var imageToBeDeleted = _productImageRepo.Get(u => u.Id == imageId);
+            var imageToBeDeleted = _unitOfWork.ProductImage.Get(u => u.Id == imageId);
             int productId = imageToBeDeleted.ProductId;
             if(imageToBeDeleted != null)
             {
@@ -185,8 +179,8 @@ namespace BulkyWeb.Areas.Admin.Controllers
 
 					}
                 }
-                _productImageRepo.Remove(imageToBeDeleted);
-                _productImageRepo.Save();
+                _unitOfWork.ProductImage.Remove(imageToBeDeleted);
+                _unitOfWork.Save();
                 TempData["success"] = "Deleted successfully";
             }
             return RedirectToAction(nameof(Upsert), new {id = productId});
@@ -197,7 +191,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            List<Product> objProductList = _productRepo.GetAll(includeProperties: "Category").ToList();
+            List<Product> objProductList = _unitOfWork.Product.GetAll(includeProperties: "Category").ToList();
             return Json(new { data = objProductList });
         }
         #endregion

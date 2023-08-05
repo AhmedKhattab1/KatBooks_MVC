@@ -13,19 +13,17 @@ namespace BulkyWeb.Areas.Customer.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-		private readonly IProductRepository _productRepo;
-        private readonly IShoppingCartRepository _shoppingCartRepo;
+		private readonly IUnitOfWork _unitOfWork;
 
-        public HomeController(ILogger<HomeController> logger, IProductRepository productRepo, IShoppingCartRepository shoppingCartRepo)
+        public HomeController(ILogger<HomeController> logger, IUnitOfWork unitOfWork)
         {
             _logger = logger;
-			_productRepo = productRepo;
-            _shoppingCartRepo = shoppingCartRepo;
+            _unitOfWork = unitOfWork;
         }
 
         public IActionResult Index()
         {
-            IEnumerable<Product> productList = _productRepo.GetAll(includeProperties: "Category,ProductImages");
+            IEnumerable<Product> productList = _unitOfWork.Product.GetAll(includeProperties: "Category,ProductImages");
             return View(productList);
         }
 
@@ -33,7 +31,7 @@ namespace BulkyWeb.Areas.Customer.Controllers
 		{
             ShoppingCart cart = new()
             {
-                Product = _productRepo.Get(u => u.Id == productId, includeProperties: "Category,ProductImages"),
+                Product = _unitOfWork.Product.Get(u => u.Id == productId, includeProperties: "Category,ProductImages"),
                 Count = 1,
                 ProductId = productId
             };
@@ -48,18 +46,18 @@ namespace BulkyWeb.Areas.Customer.Controllers
             var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
             shoppingCart.ApplicationUserId = userId;
 
-            ShoppingCart cartFromDb = _shoppingCartRepo.Get(u => u.ApplicationUserId== userId && u.ProductId==shoppingCart.ProductId);
+            ShoppingCart cartFromDb = _unitOfWork.ShoppingCart.Get(u => u.ApplicationUserId== userId && u.ProductId==shoppingCart.ProductId);
             if(cartFromDb != null)
             {
                 cartFromDb.Count += shoppingCart.Count;
-                _shoppingCartRepo.Update(cartFromDb);
-                _shoppingCartRepo.Save();
+                _unitOfWork.ShoppingCart.Update(cartFromDb);
+                _unitOfWork.Save();
             }
             else
             {
-                _shoppingCartRepo.Add(shoppingCart);
-                _shoppingCartRepo.Save();
-                HttpContext.Session.SetInt32(SD.SessionCart, _shoppingCartRepo.GetAll(u => u.ApplicationUserId == userId).Count());
+                _unitOfWork.ShoppingCart.Add(shoppingCart);
+                _unitOfWork.Save();
+                HttpContext.Session.SetInt32(SD.SessionCart, _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == userId).Count());
             }
             TempData["success"] = "Cart updated successfully";
 

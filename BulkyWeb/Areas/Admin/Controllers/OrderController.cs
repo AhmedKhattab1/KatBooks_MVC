@@ -15,15 +15,13 @@ namespace BulkyWeb.Areas.Admin.Controllers
 	[Authorize]
 	public class OrderController : Controller
     {
-        private readonly IOrderHeaderRepository _orderHeaderRepo;
-        private readonly IOrderDetailRepository _orderDetailRepo;
+        private readonly IUnitOfWork _unitOfWork;
         [BindProperty]
         public OrderVM OrderVM { get; set; }
 
-        public OrderController(IOrderHeaderRepository orderHeaderRepo, IOrderDetailRepository orderDetailRepo)
+        public OrderController(IUnitOfWork unitOfWork)
         {
-            _orderHeaderRepo = orderHeaderRepo;
-            _orderDetailRepo = orderDetailRepo;
+            _unitOfWork = unitOfWork;
         }
 
         public IActionResult Index()
@@ -35,8 +33,8 @@ namespace BulkyWeb.Areas.Admin.Controllers
         {
             OrderVM = new()
             {
-                OrderHeader = _orderHeaderRepo.Get(u => u.Id == orderId, includeProperties: "ApplicationUser"),
-                OrderDetail = _orderDetailRepo.GetAll(u => u.OrderHeaderId == orderId, includeProperties:"Product")
+                OrderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == orderId, includeProperties: "ApplicationUser"),
+                OrderDetail = _unitOfWork.OrderDetail.GetAll(u => u.OrderHeaderId == orderId, includeProperties:"Product")
             };
             return View(OrderVM);
         }
@@ -45,7 +43,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
         [Authorize(Roles = SD.Role_Admin+","+SD.Role_Employee)]
         public IActionResult UpdateOrderDetail()
         {
-            var orderHeaderFromDb = _orderHeaderRepo.Get(u => u.Id == OrderVM.OrderHeader.Id);
+            var orderHeaderFromDb = _unitOfWork.OrderHeader.Get(u => u.Id == OrderVM.OrderHeader.Id);
 
             orderHeaderFromDb.Name = OrderVM.OrderHeader.Name;
             orderHeaderFromDb.PhoneNumber = OrderVM.OrderHeader.PhoneNumber;
@@ -62,8 +60,8 @@ namespace BulkyWeb.Areas.Admin.Controllers
             {
                 orderHeaderFromDb.TrackingNumber = OrderVM.OrderHeader.TrackingNumber;
             }
-            _orderHeaderRepo.Update(orderHeaderFromDb);
-            _orderHeaderRepo.Save();
+            _unitOfWork.OrderHeader.Update(orderHeaderFromDb);
+            _unitOfWork.Save();
 
             TempData["Success"] = "Order Details Updated Successfully.";
 
@@ -74,8 +72,8 @@ namespace BulkyWeb.Areas.Admin.Controllers
         [Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
         public IActionResult StartProcessing()
         {
-            _orderHeaderRepo.UpdateStatus(OrderVM.OrderHeader.Id, SD.StatusInProcess);
-            _orderHeaderRepo.Save();
+            _unitOfWork.OrderHeader.UpdateStatus(OrderVM.OrderHeader.Id, SD.StatusInProcess);
+            _unitOfWork.Save();
 
             TempData["Success"] = "Order Details Updated Successfully.";
             return RedirectToAction(nameof(Details), new { orderId = OrderVM.OrderHeader.Id });
@@ -85,7 +83,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
 		[Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
 		public IActionResult ShipOrder()
 		{
-            var orderHeader = _orderHeaderRepo.Get(u => u.Id == OrderVM.OrderHeader.Id);
+            var orderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == OrderVM.OrderHeader.Id);
             orderHeader.TrackingNumber = OrderVM.OrderHeader.TrackingNumber;
 			orderHeader.Carrier = OrderVM.OrderHeader.Carrier;
 			orderHeader.OrderStatus = SD.StatusShipped;
@@ -95,11 +93,11 @@ namespace BulkyWeb.Areas.Admin.Controllers
                 orderHeader.PaymentDueDate = DateTime.Now.AddDays(30);
             }
 
-            _orderHeaderRepo.Update(orderHeader);
-            _orderHeaderRepo.Save();
+            _unitOfWork.OrderHeader.Update(orderHeader);
+            _unitOfWork.Save();
 
-			_orderHeaderRepo.UpdateStatus(OrderVM.OrderHeader.Id, SD.StatusShipped);
-			_orderHeaderRepo.Save();
+			_unitOfWork.OrderHeader.UpdateStatus(OrderVM.OrderHeader.Id, SD.StatusShipped);
+			_unitOfWork.Save();
 
 			TempData["Success"] = "Order Shipped Successfully.";
 			return RedirectToAction(nameof(Details), new { orderId = OrderVM.OrderHeader.Id });
@@ -109,7 +107,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
 		[Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
 		public IActionResult CancelOrder()
 		{
-			var orderHeader = _orderHeaderRepo.Get(u => u.Id == OrderVM.OrderHeader.Id);
+			var orderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == OrderVM.OrderHeader.Id);
             if(orderHeader.PaymentStatus == SD.PaymentStatusApproved)
             {
                 var options = new RefundCreateOptions
@@ -121,14 +119,14 @@ namespace BulkyWeb.Areas.Admin.Controllers
 				var service = new RefundService();
 				Refund refund = service.Create(options);
 
-                _orderHeaderRepo.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusRefunded);
+                _unitOfWork.OrderHeader.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusRefunded);
 			}
             else
             {
-				_orderHeaderRepo.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusCancelled);
+				_unitOfWork.OrderHeader.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusCancelled);
 			}
 
-			_orderHeaderRepo.Save();
+			_unitOfWork.Save();
 
 			TempData["Success"] = "Order Cancelled Successfully.";
 			return RedirectToAction(nameof(Details), new { orderId = OrderVM.OrderHeader.Id });
@@ -138,8 +136,8 @@ namespace BulkyWeb.Areas.Admin.Controllers
 		[HttpPost]
 		public IActionResult Details_PAY_NOW()
 		{
-            OrderVM.OrderHeader = _orderHeaderRepo.Get(u => u.Id == OrderVM.OrderHeader.Id, includeProperties: "ApplicationUser");
-			OrderVM.OrderDetail = _orderDetailRepo.GetAll(u => u.OrderHeaderId == OrderVM.OrderHeader.Id, includeProperties: "Product");
+            OrderVM.OrderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == OrderVM.OrderHeader.Id, includeProperties: "ApplicationUser");
+			OrderVM.OrderDetail = _unitOfWork.OrderDetail.GetAll(u => u.OrderHeaderId == OrderVM.OrderHeader.Id, includeProperties: "Product");
 
 			//regular customer account
 			//stripe logic
@@ -171,8 +169,8 @@ namespace BulkyWeb.Areas.Admin.Controllers
 			}
 			var service = new Stripe.Checkout.SessionService();
 			Stripe.Checkout.Session session = service.Create(options);
-			_orderHeaderRepo.UpdateStripePaymentID(OrderVM.OrderHeader.Id, session.Id, session.PaymentIntentId);
-			_orderHeaderRepo.Save();
+			_unitOfWork.OrderHeader.UpdateStripePaymentID(OrderVM.OrderHeader.Id, session.Id, session.PaymentIntentId);
+			_unitOfWork.Save();
 
 			Response.Headers.Add("Location", session.Url);
 			return new StatusCodeResult(303);
@@ -180,7 +178,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
 
 		public IActionResult PaymentConfirmation(int orderHeaderId)
 		{
-			OrderHeader orderHeader = _orderHeaderRepo.Get(u => u.Id == orderHeaderId);
+			OrderHeader orderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == orderHeaderId);
 			if (orderHeader.PaymentStatus == SD.PaymentStatusDelayedPayment)
 			{
 				var service = new Stripe.Checkout.SessionService();
@@ -188,9 +186,9 @@ namespace BulkyWeb.Areas.Admin.Controllers
 
 				if (session.PaymentStatus.ToLower() == "paid")
 				{
-					_orderHeaderRepo.UpdateStripePaymentID(orderHeaderId, session.Id, session.PaymentIntentId);
-					_orderHeaderRepo.UpdateStatus(orderHeaderId, orderHeader.OrderStatus, SD.PaymentStatusApproved);
-					_orderHeaderRepo.Save();
+					_unitOfWork.OrderHeader.UpdateStripePaymentID(orderHeaderId, session.Id, session.PaymentIntentId);
+					_unitOfWork.OrderHeader.UpdateStatus(orderHeaderId, orderHeader.OrderStatus, SD.PaymentStatusApproved);
+					_unitOfWork.Save();
 				}
 			}
 			return View(orderHeaderId);
@@ -205,14 +203,14 @@ namespace BulkyWeb.Areas.Admin.Controllers
 
             if(User.IsInRole(SD.Role_Admin) || User.IsInRole(SD.Role_Employee))
             {
-                objOrderHeaders = _orderHeaderRepo.GetAll(includeProperties: "ApplicationUser").ToList();
+                objOrderHeaders = _unitOfWork.OrderHeader.GetAll(includeProperties: "ApplicationUser").ToList();
             }
             else
             {
                 var claimsIdentity = (ClaimsIdentity)User.Identity;
                 var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
 
-                objOrderHeaders = _orderHeaderRepo.GetAll(u => u.ApplicationUserId == userId, includeProperties: "ApplicationUser");
+                objOrderHeaders = _unitOfWork.OrderHeader.GetAll(u => u.ApplicationUserId == userId, includeProperties: "ApplicationUser");
             }
 
             switch (status)
