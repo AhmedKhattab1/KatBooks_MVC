@@ -363,3 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 /password.txt
 /BulkyWeb/appsettings.json
+/BulkyWeb/appsettings.json
+/BulkyWeb/appsettings.Development.json
